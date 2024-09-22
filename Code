@@ -1,0 +1,68 @@
+Smart green building_Code
+#include <ESP8266WiFi.h>
+#include <Servo.h>
+// WiFi credentials
+const char* ssid = "YourWiFiSSID";
+const char* password = "YourWiFiPassword";
+// Define the GPIO pins for the LDR sensors
+const int leftLDRPin = A0; // Analog pin A0
+const int rightLDRPin = A1; // Analog pin A1
+// Define the GPIO pin for the servo motor
+const int servoPin = 1; // GPIO5 (D1)
+// Define the maximum and minimum angles for the servo
+const int minAngle = 0; // Minimum angle (fully closed)
+const int maxAngle = 180; // Maximum angle (fully open)
+// Define the threshold value for detecting the direction of light
+const int threshold = 1000; // Adjust the threshold value as needed
+Servo windowServo;
+void setup() {
+Serial.begin(9600);
+// Connect to WiFi
+WiFi.begin(ssid, password);
+while (WiFi.status() != WL_CONNECTED) {
+delay(1000);
+Serial.println("Connecting to WiFi...");
+}
+Serial.println("Connected to WiFi");
+// Attach the servo to the GPIO pin
+windowServo.attach(servoPin);
+// Set the initial position of the window (fully closed)
+windowServo.write(minAngle);
+// Initialize LDR pins as inputs
+pinMode(leftLDRPin, INPUT);
+pinMode(rightLDRPin, INPUT);
+}
+void loop() {
+// Read the analog values from the LDR sensors
+int leftLDRValue = analogRead(leftLDRPin);
+int rightLDRValue = analogRead(rightLDRPin);
+// Print the LDR values (for testing purposes)
+Serial.print("Left LDR Value: ");
+Serial.println(leftLDRValue);
+Serial.print("Right LDR Value: ");
+Serial.println(rightLDRValue);
+// Check the difference in light intensity between left and right sensors
+int lightDifference = leftLDRValue - rightLDRValue;
+// Adjust the window position based on the difference in light intensity
+if (lightDifference > threshold) {
+// More light on the left, so move window towards the left
+Serial.println("More light on the left. Moving window towards the left.");
+moveWindow(-1); // Move servo counterclockwise (left)
+} else if (lightDifference < -threshold) {
+// More light on the right, so move window towards the right
+Serial.println("More light on the right. Moving window towards the right.");
+moveWindow(1); // Move servo clockwise (right)
+} else {
+// Light intensity balanced, keep window position unchanged
+Serial.println("Light intensity balanced. Keeping window position unchanged.");
+}
+delay(1000); // Adjust delay as needed
+}
+void moveWindow(int direction) {
+// Calculate the new position of the servo based on the direction
+int newPosition = windowServo.read() + (5 * direction); // Adjust angle increment as needed
+// Ensure the new position is within the valid range
+newPosition = constrain(newPosition, minAngle, maxAngle);
+// Move the servo to the new position
+windowServo.write(newPosition);
+}
